@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Inventory Valuation{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Inventory Valuation</div>
+        <div class="page-subtitle">Total value: <strong>KES {{ '{:,.2f}'.format(total) }}</strong></div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('reports.export_excel', report_type='valuation') }}" class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel"></i> Excel
+        </a>
+        <a href="{{ url_for('reports.export_pdf', report_type='valuation') }}" class="btn btn-danger btn-sm">
+            <i class="fas fa-file-pdf"></i> PDF
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Item ID</th><th>Name</th><th>Category</th><th>Unit</th><th>Stock</th><th>Unit Cost</th><th>Total Value</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            {% for r in rows %}
+            <tr>
+                <td><code style="color:var(--secondary);font-size:0.8rem">{{ r.item_id }}</code></td>
+                <td><strong>{{ r.name }}</strong></td>
+                <td>{{ r.category }}</td>
+                <td>{{ r.unit_of_measure }}</td>
+                <td>{{ r.current_stock }}</td>
+                <td>KES {{ '{:,.2f}'.format(r.unit_cost) }}</td>
+                <td><strong>KES {{ '{:,.2f}'.format(r.total_value) }}</strong></td>
+                <td><span class="badge {% if r.status == 'Active' %}badge-success{% else %}badge-warning{% endif %}">{{ r.status }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted" style="padding:32px">No data.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

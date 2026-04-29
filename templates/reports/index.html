@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Reports{% endblock %}
+{% block extra_css %}
+<style>
+    .report-card { background:white; border-radius:var(--radius); box-shadow:var(--shadow);
+        padding:28px 24px; text-align:center; cursor:pointer; transition:all 0.2s; text-decoration:none; display:block; }
+    .report-card:hover { transform:translateY(-3px); box-shadow:0 6px 24px rgba(52,152,219,0.18); }
+    .report-icon { font-size:2.8rem; margin-bottom:14px; }
+    .report-title { font-family:'Sora',sans-serif; font-size:1rem; font-weight:700; color:var(--primary); }
+    .report-desc { font-size:0.83rem; color:#90a4ae; margin-top:6px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Reports & Analytics</div>
+    <div class="page-subtitle">Generate, visualise and export inventory reports</div>
+</div>
+ 
+<div class="grid-3" style="margin-bottom:28px">
+    <a href="{{ url_for('reports.valuation') }}" class="report-card">
+        <div class="report-icon"><i class="fas fa-coins" style="color:var(--success)"></i></div>
+        <div class="report-title">Inventory Valuation</div>
+        <div class="report-desc">Current stock value by item and category</div>
+    </a>
+    <a href="{{ url_for('reports.movement') }}" class="report-card">
+        <div class="report-icon"><i class="fas fa-exchange-alt" style="color:var(--secondary)"></i></div>
+        <div class="report-title">Stock Movement</div>
+        <div class="report-desc">Inflow and outflow trends over a date range</div>
+    </a>
+    <a href="{{ url_for('reports.low_stock') }}" class="report-card">
+        <div class="report-icon"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i></div>
+        <div class="report-title">Low Stock Report</div>
+        <div class="report-desc">All items at or below their reorder level</div>
+    </a>
+</div>
+ 
+<div class="grid-2">
+    <div class="card">
+        <div class="card-title"><i class="fas fa-chart-bar" style="color:var(--secondary)"></i> Stock Value by Category</div>
+        <canvas id="categoryBar" height="220"></canvas>
+    </div>
+    <div class="card">
+        <div class="card-title"><i class="fas fa-chart-line" style="color:var(--success)"></i> Monthly Inflow vs Outflow (Last 6 Months)</div>
+        <canvas id="movementLine" height="220"></canvas>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+    const catData     = {{ category_data | tojson }};
+    const monthData   = {{ monthly_data | tojson }};
+    const chartColors = ['#3498DB','#27AE60','#E74C3C','#F39C12','#9B59B6','#1ABC9C'];
+ 
+    if (catData.length > 0) {
+        new Chart(document.getElementById('categoryBar'), {
+            type: 'bar',
+            data: {
+                labels: catData.map(d => d.category),
+                datasets: [{
+                    label: 'Stock Value (KES)',
+                    data: catData.map(d => parseFloat(d.value)),
+                    backgroundColor: chartColors.slice(0, catData.length),
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { ticks: { callback: v => 'KES ' + v.toLocaleString() } }
+                }
+            }
+        });
+    }
+ 
+    if (monthData.labels && monthData.labels.length > 0) {
+        new Chart(document.getElementById('movementLine'), {
+            type: 'line',
+            data: {
+                labels: monthData.labels,
+                datasets: [
+                    {
+                        label: 'Inflow (KES)',
+                        data: monthData.inflow,
+                        borderColor: '#27AE60',
+                        backgroundColor: 'rgba(39,174,96,0.08)',
+                        tension: 0.4, fill: true, pointRadius: 4
+                    },
+                    {
+                        label: 'Outflow (KES)',
+                        data: monthData.outflow,
+                        borderColor: '#E74C3C',
+                        backgroundColor: 'rgba(231,76,60,0.08)',
+                        tension: 0.4, fill: true, pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } },
+                scales: {
+                    y: { ticks: { callback: v => 'KES ' + v.toLocaleString() } }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

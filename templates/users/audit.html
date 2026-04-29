@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Audit Log</div>
+        <div class="page-subtitle">{{ total }} action(s) recorded</div>
+    </div>
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Users
+    </a>
+</div>
+<div class="card mb-2">
+    <form method="GET" class="d-flex gap-2" style="align-items:flex-end;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;flex:1;min-width:180px">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control" placeholder="Username or record ID" value="{{ search }}">
+        </div>
+        <div class="form-group" style="margin:0;min-width:180px">
+            <label class="form-label">Action Type</label>
+            <select name="action" class="form-control">
+                <option value="">All Actions</option>
+                {% for a in actions %}
+                <option value="{{ a }}" {% if action == a %}selected{% endif %}>{{ a }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display:flex;gap:8px;padding-bottom:1px">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+            <a href="{{ url_for('users.audit_log') }}" class="btn btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Date / Time</th><th>Username</th><th>Action</th><th>Table</th><th>Record ID</th><th>IP Address</th></tr>
+            </thead>
+            <tbody>
+            {% for log in logs %}
+            <tr>
+                <td class="text-muted">{{ log.created_at.strftime('%d %b %Y %H:%M:%S') }}</td>
+                <td><strong>{{ log.username or 'System' }}</strong></td>
+                <td>
+                    <span class="badge
+                        {% if 'LOGIN' in log.action %}badge-success
+                        {% elif 'DELETE' in log.action or 'REJECT' in log.action %}badge-danger
+                        {% elif 'CREATE' in log.action or 'APPROVE' in log.action %}badge-info
+                        {% else %}badge-secondary{% endif %}">
+                        {{ log.action }}
+                    </span>
+                </td>
+                <td class="text-muted">{{ log.table_name }}</td>
+                <td class="text-muted">{{ log.record_id or '-' }}</td>
+                <td class="text-muted">{{ log.ip_address or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted" style="padding:32px">No audit records found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}<a href="{{ url_for('users.audit_log', page=page-1, search=search, action=action) }}"><i class="fas fa-chevron-left"></i></a>{% endif %}
+        {% for p in range(1, total_pages+1) %}
+        <a href="{{ url_for('users.audit_log', page=p, search=search, action=action) }}" class="{% if p==page %}current{% endif %}">{{ p }}</a>
+        {% endfor %}
+        {% if page < total_pages %}<a href="{{ url_for('users.audit_log', page=page+1, search=search, action=action) }}"><i class="fas fa-chevron-right"></i></a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

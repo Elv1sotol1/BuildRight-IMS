@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block extra_css %}
+<style>
+    .kpi-card {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 22px 24px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+    .kpi-icon {
+        width: 52px; height: 52px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; flex-shrink: 0;
+    }
+    .kpi-label { font-size: 0.78rem; color: #90a4ae; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-family: 'Sora', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--primary); line-height: 1.1; }
+    .kpi-sub   { font-size: 0.78rem; color: #90a4ae; margin-top: 2px; }
+    .section-title { font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 600;
+        color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">Welcome back, {{ session.full_name }} &mdash; {{ session.role }}</div>
+</div>
+ 
+<div class="grid-4" style="margin-bottom:24px">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#e8f4fd">
+            <i class="fas fa-boxes" style="color:var(--secondary)"></i>
+        </div>
+        <div>
+            <div class="kpi-label">Total Items</div>
+            <div class="kpi-value">{{ total_items }}</div>
+            <div class="kpi-sub">active inventory</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#d5f5e3">
+            <i class="fas fa-coins" style="color:var(--success)"></i>
+        </div>
+        <div>
+            <div class="kpi-label">Total Value</div>
+            <div class="kpi-value" style="font-size:1.2rem">KES {{ '{:,.0f}'.format(total_value) }}</div>
+            <div class="kpi-sub">inventory worth</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+    <div class="kpi-icon {% if low_stock_count > 0 %}bg-danger-light{% else %}bg-success-light{% endif %}">
+        <i class="fas fa-exclamation-triangle {% if low_stock_count > 0 %}text-danger{% else %}text-success{% endif %}"></i>
+    </div>
+    <div>
+        <div class="kpi-label">Low Stock</div>
+        <div class="kpi-value {% if low_stock_count > 0 %}text-danger{% else %}text-success{% endif %}">
+            {{ low_stock_count }}
+        </div>
+        <div class="kpi-sub">items need reorder</div>
+    </div>
+</div>
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background:#fef9e7">
+            <i class="fas fa-exchange-alt" style="color:var(--warning)"></i>
+        </div>
+        <div>
+            <div class="kpi-label">Transactions</div>
+            <div class="kpi-value">{{ total_transactions }}</div>
+            <div class="kpi-sub">total recorded</div>
+        </div>
+    </div>
+</div>
+ 
+<div class="grid-2">
+    <div class="card">
+        <div class="section-title"><i class="fas fa-chart-doughnut" style="color:var(--secondary)"></i> Stock by Category</div>
+        <canvas id="categoryChart" height="220"></canvas>
+    </div>
+ 
+    <div class="card">
+        <div class="section-title"><i class="fas fa-exclamation-circle" style="color:var(--danger)"></i> Low Stock Alerts</div>
+        {% if low_stock_items %}
+        <div style="display:flex;flex-direction:column;gap:8px">
+            {% for item in low_stock_items %}
+            <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:10px 14px;background:#fef9f9;border-radius:8px;border-left:3px solid var(--danger)">
+                <div>
+                    <div style="font-weight:600;font-size:0.9rem">{{ item.name }}</div>
+                    <div style="font-size:0.78rem;color:#90a4ae">{{ item.category_name }}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-weight:700;color:var(--danger)">{{ item.current_stock }} {{ item.unit_of_measure }}</div>
+                    <div style="font-size:0.75rem;color:#90a4ae">reorder at {{ item.reorder_level }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top:12px">
+            <a href="{{ url_for('inventory.list_items', status='Active') }}" class="btn btn-danger btn-sm">
+                <i class="fas fa-arrow-right"></i> View All Low Stock
+            </a>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:32px 0">
+            <i class="fas fa-check-circle" style="font-size:2rem;color:var(--success)"></i>
+            <p style="margin-top:10px;color:#90a4ae">All items are sufficiently stocked.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+ 
+<div class="card">
+    <div class="section-title"><i class="fas fa-history" style="color:var(--secondary)"></i> Recent Transactions</div>
+    {% if recent_transactions %}
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th><th>Item</th><th>Type</th><th>Sub-Type</th><th>Qty</th><th>Value</th><th>By</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for t in recent_transactions %}
+            <tr>
+                <td class="text-muted">{{ t.transaction_date.strftime('%d %b %Y') }}</td>
+                <td><a href="{{ url_for('inventory.view_item', item_id=t.item_id) }}"
+                    style="color:var(--secondary);text-decoration:none;font-weight:500">{{ t.item_name }}</a></td>
+                <td><span class="badge {% if t.transaction_type == 'Inflow' %}badge-success{% else %}badge-danger{% endif %}">
+                    {{ t.transaction_type }}</span></td>
+                <td>{{ t.sub_type }}</td>
+                <td><strong>{{ t.quantity }} {{ t.unit_of_measure }}</strong></td>
+                <td>KES {{ '{:,.2f}'.format(t.total_value) }}</td>
+                <td class="text-muted">{{ t.username }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top:12px">
+        <a href="{{ url_for('inventory.transactions') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-right"></i> View All Transactions
+        </a>
+    </div>
+    {% else %}
+    <p class="text-muted">No transactions recorded yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+    const categoryData = {{ category_data | tojson }};
+    if (categoryData.length > 0) {
+        const colors = ['#3498DB','#27AE60','#E74C3C','#F39C12','#9B59B6','#1ABC9C','#E67E22','#2ECC71'];
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: categoryData.map(d => d.category),
+                datasets: [{
+                    data: categoryData.map(d => parseFloat(d.value)),
+                    backgroundColor: colors.slice(0, categoryData.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 16, font: { family: 'DM Sans' } } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ' KES ' + parseFloat(ctx.raw).toLocaleString('en-KE', {minimumFractionDigits:0})
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('categoryChart').parentElement.innerHTML +=
+            '<p class="text-muted" style="text-align:center;padding:20px">No inventory data yet.</p>';
+        document.getElementById('categoryChart').style.display = 'none';
+    }
+</script>
+{% endblock %}

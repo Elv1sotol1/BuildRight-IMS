@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BuildRight{% endblock %} | Inventory System</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/uploads/logo.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #2C3E50;
+            --secondary: #3498DB;
+            --success: #27AE60;
+            --warning: #F39C12;
+            --danger: #E74C3C;
+            --bg: #ECF0F1;
+            --text: #2C3E50;
+            --white: #ffffff;
+            --sidebar-w: 240px;
+            --nav-h: 60px;
+            --shadow: 0 2px 12px rgba(44,62,80,0.10);
+            --radius: 10px;
+        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h); background: var(--primary);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+            z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+        .topbar-brand { font-family: 'Sora', sans-serif; font-size: 1.25rem; font-weight: 700; color: white;
+            letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .topbar-brand span { color: var(--secondary); }
+        .topbar-right { display: flex; align-items: center; gap: 20px; }
+        .topbar-user { color: #b0bec5; font-size: 0.875rem; display: flex; align-items: center; gap: 8px; }
+        .topbar-user strong { color: white; }
+        .role-badge { background: rgba(52,152,219,0.2); color: var(--secondary); border: 1px solid rgba(52,152,219,0.4);
+            font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; }
+        .btn-logout { color: #b0bec5; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center;
+            gap: 6px; transition: color 0.2s; }
+        .btn-logout:hover { color: var(--danger); }
+        .sidebar { position: fixed; top: var(--nav-h); left: 0; width: var(--sidebar-w);
+            height: calc(100vh - var(--nav-h)); background: white; border-right: 1px solid #dde3e8;
+            padding: 20px 0; overflow-y: auto; z-index: 90; }
+        .nav-section { padding: 8px 20px 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; color: #90a4ae; }
+        .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 20px; color: #546e7a;
+            text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.15s;
+            border-left: 3px solid transparent; }
+        .nav-link:hover { background: #f0f4f8; color: var(--primary); border-left-color: var(--secondary); }
+        .nav-link.active { background: #e8f4fd; color: var(--secondary); border-left-color: var(--secondary); }
+        .nav-link i { width: 18px; text-align: center; }
+        .main-content { margin-left: var(--sidebar-w); margin-top: var(--nav-h); padding: 28px;
+            min-height: calc(100vh - var(--nav-h)); }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-family: 'Sora', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .page-subtitle { color: #78909c; font-size: 0.875rem; margin-top: 4px; }
+        .alerts-wrapper { margin-bottom: 20px; }
+        .alert { padding: 12px 16px; border-radius: var(--radius); margin-bottom: 10px; font-size: 0.875rem;
+            display: flex; align-items: center; gap: 10px; border: 1px solid transparent; }
+        .alert-success { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .alert-danger  { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .alert-warning { background: #fff3cd; color: #856404; border-color: #ffeeba; }
+        .alert-info    { background: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+        .alert-close { margin-left: auto; background: none; border: none; cursor: pointer; color: inherit;
+            opacity: 0.6; font-size: 1rem; padding: 0; }
+        .alert-close:hover { opacity: 1; }
+        .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 24px; }
+        .card-title { font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 600; color: var(--primary);
+            margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 7px;
+            font-size: 0.875rem; font-weight: 600; font-family: 'DM Sans', sans-serif; border: none;
+            cursor: pointer; text-decoration: none; transition: all 0.15s; }
+        .btn-primary { background: var(--secondary); color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #219a52; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-warning:hover { background: #d68910; }
+        .btn-secondary { background: #ecf0f1; color: var(--primary); }
+        .btn-secondary:hover { background: #dde3e8; }
+        .btn-sm { padding: 5px 12px; font-size: 0.8rem; }
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 10px 14px; border: 1.5px solid #dde3e8; border-radius: 7px;
+            font-size: 0.9rem; font-family: 'DM Sans', sans-serif; color: var(--text); background: white;
+            transition: border-color 0.2s; outline: none; }
+        .form-control:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(52,152,219,0.12); }
+        .table-wrapper { overflow-x: auto; border-radius: var(--radius); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead th { background: var(--primary); color: white; padding: 12px 16px; text-align: left;
+            font-family: 'Sora', sans-serif; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+        tbody tr { border-bottom: 1px solid #f0f4f8; transition: background 0.1s; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody td { padding: 12px 16px; color: var(--text); vertical-align: middle; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger  { background: #f8d7da; color: #721c24; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-secondary { background: #e9ecef; color: #495057; }
+        .badge-info    { background: #d1ecf1; color: #0c5460; }
+        .pagination { display: flex; gap: 6px; align-items: center; margin-top: 20px; }
+        .pagination a, .pagination span { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;
+            font-weight: 500; text-decoration: none; color: var(--primary); background: white;
+            border: 1px solid #dde3e8; transition: all 0.15s; }
+        .pagination a:hover { background: var(--secondary); color: white; border-color: var(--secondary); }
+        .pagination .current { background: var(--secondary); color: white; border-color: var(--secondary); }
+        .auth-layout { min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #2C3E50 0%, #3d5166 60%, #2C3E50 100%); }
+        .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            z-index: 200; align-items: center; justify-content: center; }
+        .modal-backdrop.open { display: flex; }
+        .modal { background: white; border-radius: var(--radius); padding: 28px; width: 100%;
+            max-width: 500px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); animation: modalIn 0.2s ease; }
+        @keyframes modalIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-family: 'Sora', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+        .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #90a4ae; }
+        .modal-close:hover { color: var(--danger); }
+        .text-muted { color: #90a4ae; } .text-center { text-align: center; }
+        .mt-1{margin-top:8px} .mt-2{margin-top:16px} .mt-3{margin-top:24px}
+        .mb-1{margin-bottom:8px} .mb-2{margin-bottom:16px} .mb-3{margin-bottom:24px}
+        .d-flex{display:flex} .align-center{align-items:center} .justify-between{justify-content:space-between}
+        .gap-2{gap:16px} .w-100{width:100%}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+        .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+        .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+        @media(max-width:900px){.grid-4{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr}}
+        @media(max-width:600px){.sidebar{display:none}.main-content{margin-left:0}
+            .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+        .text-danger { color: var(--danger); }
+        .text-warning { color: var(--warning); }
+        .text-success { color: var(--success); }
+        
+        .bg-danger-light { background: #fdecea; }
+        .bg-success-light { background: #d5f5e3; }    
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+{% if session.user_id %}
+<nav class="topbar">
+    <a class="topbar-brand" href="{{ url_for('main.dashboard') }}">
+        <i class="fas fa-hard-hat"></i><span>BuildRight</span>
+    </a>
+    
+    <div class="topbar-right">
+    <div class="topbar-user">
+        <i class="fas fa-user-circle"></i>
+        <a href="{{ url_for('main.profile') }}" style="color:white;text-decoration:none;font-weight:600">
+            {{ session.full_name }}
+        </a>
+        <span class="role-badge">{{ session.role }}</span>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="btn-logout">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+</div>
+</nav>
+
+
+<aside class="sidebar">
+    <div class="nav-section">Main</div>
+    <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+        <i class="fas fa-th-large"></i> Dashboard
+    </a>
+    <div class="nav-section">Inventory</div>
+    <a href="{{ url_for('inventory.list_items') }}" class="nav-link {% if request.endpoint == 'inventory.list_items' %}active{% endif %}">
+        <i class="fas fa-boxes"></i> Items
+    </a>
+    <a href="{{ url_for('inventory.transactions') }}" class="nav-link {% if request.endpoint == 'inventory.transactions' %}active{% endif %}">
+        <i class="fas fa-exchange-alt"></i> Transactions
+    </a>
+    <a href="{{ url_for('po.list_pos') }}" class="nav-link {% if 'po' in request.endpoint %}active{% endif %}">
+        <i class="fas fa-file-invoice"></i> Purchase Orders
+    </a>
+    <a href="{{ url_for('adjustments.list_adjustments') }}" class="nav-link {% if 'adjustment' in request.endpoint %}active{% endif %}">
+        <i class="fas fa-sliders-h"></i> Stock Adjustments
+    </a>
+    {% if session.role in ['Admin', 'Manager'] %}
+    <a href="{{ url_for('inventory.list_suppliers') }}" class="nav-link {% if 'supplier' in request.endpoint and 'performance' not in request.endpoint %}active{% endif %}">
+        <i class="fas fa-truck"></i> Suppliers
+    </a>
+    <a href="{{ url_for('inventory.supplier_performance') }}" class="nav-link {% if 'performance' in request.endpoint %}active{% endif %}">
+        <i class="fas fa-chart-bar"></i> Supplier Performance
+    </a>
+    <div class="nav-section">Reports</div>
+    <a href="{{ url_for('reports.index') }}" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
+        <i class="fas fa-chart-pie"></i> Reports
+    </a>
+    {% endif %}
+    {% if session.role == 'Admin' %}
+    <div class="nav-section">Admin</div>
+    <a href="{{ url_for('users.list_users') }}" class="nav-link {% if request.endpoint == 'users.list_users' %}active{% endif %}">
+        <i class="fas fa-users"></i> Users
+    </a>
+    <a href="{{ url_for('users.audit_log') }}" class="nav-link {% if request.endpoint == 'users.audit_log' %}active{% endif %}">
+        <i class="fas fa-history"></i> Audit Log
+    </a>
+    <a href="{{ url_for('inventory.list_categories') }}" class="nav-link {% if 'categor' in request.endpoint %}active{% endif %}">
+        <i class="fas fa-tags"></i> Categories
+    </a>
+    <a href="{{ url_for('inventory.list_sites') }}" class="nav-link {% if 'site' in request.endpoint %}active{% endif %}">
+        <i class="fas fa-map-marker-alt"></i> Sites
+    </a>
+    <a href="{{ url_for('backup.index') }}" class="nav-link {% if 'backup' in request.endpoint %}active{% endif %}">
+        <i class="fas fa-database"></i> Backup
+    </a>
+    {% endif %}
+</aside>
+
+
+
+
+
+<main class="main-content">
+    <div class="alerts-wrapper">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                <i class="fas fa-info-circle"></i>
+                {{ message }}
+                <button class="alert-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+</main>
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+<script>
+    setTimeout(() => { document.querySelectorAll('.alert').forEach(a => a.remove()); }, 5000);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

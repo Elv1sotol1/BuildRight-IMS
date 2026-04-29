@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Inventory Items</div>
+        <div class="page-subtitle">{{ total }} item(s) total</div>
+    </div>
+    {% if session.role in ['Admin', 'Manager'] %}
+    <a href="{{ url_for('inventory.add_item') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Item
+    </a>
+    {% endif %}
+</div>
+
+<div class="card mb-2">
+    <form method="GET" class="d-flex gap-2" style="flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group" style="margin:0;flex:1;min-width:180px">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control" placeholder="Name or Item ID" value="{{ search }}">
+        </div>
+        <div class="form-group" style="margin:0;min-width:160px">
+            <label class="form-label">Category</label>
+            <select name="category_id" class="form-control">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.category_id }}" {% if category_id == cat.category_id|string %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0;min-width:140px">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control">
+                <option value="">All Statuses</option>
+                <option value="Active" {% if status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Out of Stock" {% if status == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+                <option value="Discontinued" {% if status == 'Discontinued' %}selected{% endif %}>Discontinued</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:8px;padding-bottom:1px">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+            <a href="{{ url_for('inventory.list_items') }}" class="btn btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+ 
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Item ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Stock</th>
+                    <th>Unit Cost</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in items %}
+            <tr>
+                <td><code style="font-size:0.8rem;color:#3498DB">{{ item.item_id }}</code></td>
+                <td>
+                        {% if item.image_path %}
+                        <img src="{{ url_for('static', filename='img/uploads/' + item.image_path) }}"
+                            style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
+                        {% else %}
+                        <div style="width:40px;height:40px;background:#ecf0f1;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-box" style="color:#b0bec5"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ item.name }}</strong></td>
+                    <td>{{ item.category_name }}</td>
+                    <td>
+                        <span style="font-weight:600" class="{% if item.current_stock <= item.reorder_level %}
+                        text-danger{% elif item.current_stock <= item.reorder_level * 1.5 %}text-warning{% else %}
+                        text-success{% endif %}">
+                            {{ item.current_stock }} {{ item.unit_of_measure }}
+                        </span>
+                        {% if item.current_stock <= item.reorder_level %}
+                        <span class="badge badge-danger" style="margin-left:4px;font-size:0.65rem">LOW</span>
+                        {% endif %}
+                    </td>
+                    <td>KES {{ '{:,.2f}'.format(item.unit_cost) }}</td>
+                    <td>
+                        <span class="badge {% if item.status == 'Active' %}badge-success{% elif item.status == 'Out of Stock' %}badge-warning{% else %}badge-secondary{% endif %}">
+                            {{ item.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('inventory.view_item', item_id=item.item_id) }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if session.role in ['Admin', 'Manager'] %}
+                            <a href="{{ url_for('inventory.edit_item', item_id=item.item_id) }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            {% if session.role == 'Admin' %}
+                            <form method="POST" action="{{ url_for('inventory.delete_item', item_id=item.item_id) }}"
+                            onsubmit="return confirm('Delete or archive this item?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-center text-muted" style="padding:32px">No items found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+ 
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('inventory.list_items', page=page-1, search=search, category_id=category_id, status=status) }}">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% endif %}
+        {% for p in range(1, total_pages + 1) %}
+        <a href="{{ url_for('inventory.list_items', page=p, search=search, category_id=category_id, status=status) }}"
+            class="{% if p == page %}current{% endif %}">{{ p }}</a>
+        {% endfor %}
+        {% if page < total_pages %}
+        <a href="{{ url_for('inventory.list_items', page=page+1, search=search, category_id=category_id, status=status) }}">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

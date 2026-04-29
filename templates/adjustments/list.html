@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Stock Adjustments{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Stock Adjustments</div>
+        <div class="page-subtitle">Manage stock correction requests requiring approval</div>
+    </div>
+    <a href="{{ url_for('adjustments.request_adjustment') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Request Adjustment
+    </a>
+</div>
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Item</th><th>Type</th><th>Qty</th><th>Reason</th><th>Status</th><th>Requested By</th><th>Approved By</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+            {% for a in adjustments %}
+            <tr>
+                <td><strong>{{ a.item_name }}</strong><br><small class="text-muted">{{ a.item_id }}</small></td>
+                <td><span class="badge {% if a.adjustment_type == 'Increase' %}badge-success{% else %}badge-danger{% endif %}">{{ a.adjustment_type }}</span></td>
+                <td><strong>{{ a.quantity }} {{ a.unit_of_measure }}</strong></td>
+                <td>{{ a.reason }}</td>
+                <td><span class="badge {% if a.status == 'Approved' %}badge-success{% elif a.status == 'Rejected' %}badge-danger{% else %}badge-warning{% endif %}">{{ a.status }}</span></td>
+                <td class="text-muted">{{ a.requested_by_name }}</td>
+                <td class="text-muted">{{ a.approved_by_name or '-' }}</td>
+                <td class="text-muted">{{ a.created_at.strftime('%d %b %Y') }}</td>
+                <td>
+                    {% if a.status == 'Pending' and session.role in ['Admin','Manager'] %}
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ url_for('adjustments.approve_adjustment', adjustment_id=a.adjustment_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Approve</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('adjustments.reject_adjustment', adjustment_id=a.adjustment_id) }}"
+                            onsubmit="return confirm('Reject this adjustment?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <span class="text-muted" style="font-size:0.8rem">{{ a.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="text-center text-muted" style="padding:32px">No adjustment requests yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

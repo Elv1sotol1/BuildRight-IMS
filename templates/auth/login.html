@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block extra_css %}
+<style>
+    .auth-card { background: white; border-radius: 16px; padding: 44px 40px; width: 100%; max-width: 420px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+    .auth-logo { text-align: center; margin-bottom: 28px; }
+    .auth-logo-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #3498DB, #2980b9);
+        border-radius: 16px; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; color: white; margin-bottom: 12px; }
+    .auth-title { font-family: 'Sora', sans-serif; font-size: 1.6rem; font-weight: 700; color: #2C3E50; text-align: center; }
+    .auth-subtitle { color: #90a4ae; font-size: 0.875rem; text-align: center; margin-top: 4px; margin-bottom: 28px; }
+    .input-icon-wrap { position: relative; }
+    .input-icon-wrap .form-control { padding-left: 42px; }
+    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #90a4ae; }
+    .toggle-password { position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; color: #90a4ae; cursor: pointer; font-size: 0.9rem; padding: 0; }
+    .toggle-password:hover { color: #3498DB; }
+    .auth-footer { text-align: center; margin-top: 20px; font-size: 0.85rem; color: #90a4ae; }
+    .auth-footer a { color: #3498DB; text-decoration: none; font-weight: 600; }
+    .auth-footer a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+{% block auth_content %}
+<div class="auth-layout">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <div class="auth-logo-icon"><i class="fas fa-hard-hat"></i></div>
+            <div class="auth-title">BuildRight</div>
+            <div class="auth-subtitle">Inventory Management System</div>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="margin-bottom:16px;">
+            <i class="fas fa-exclamation-circle"></i> {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <div class="input-icon-wrap">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" name="username" class="form-control" placeholder="Enter your username" required autofocus>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="input-icon-wrap">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Enter your password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100" style="justify-content:center; padding:12px;">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+        <div class="auth-footer">
+            <a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    function togglePassword() {
+        const input = document.getElementById('passwordInput');
+        const icon = document.getElementById('eyeIcon');
+        if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+        else { input.type = 'password'; icon.className = 'fas fa-eye'; }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.name }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">{{ item.name }}</div>
+        <div class="page-subtitle">{{ item.item_id }} &bull; {{ item.category_name }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        {% if session.role in ['Admin', 'Manager'] %}
+        <a href="{{ url_for('inventory.edit_item', item_id=item.item_id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        {% endif %}
+        <a href="{{ url_for('inventory.list_items') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        {% if item.image_path %}
+        <img src="{{ url_for('static', filename='img/uploads/' + item.image_path) }}"
+        style="width:100%;max-height:260px;object-fit:cover;border-radius:8px;margin-bottom:20px">
+        {% endif %}
+        <div class="card-title"><i class="fas fa-info-circle"></i> Item Details</div>
+        <table style="width:100%;font-size:0.9rem">
+            <tr><td style="padding:6px 0;color:#90a4ae;width:45%">Item ID</td><td><code>{{ item.item_id }}</code></td></tr>
+            <tr><td style="padding:6px 0;color:#90a4ae">Category</td><td>{{ item.category_name }}</td></tr>
+            <tr><td style="padding:6px 0;color:#90a4ae">Unit</td><td>{{ item.unit_of_measure }}</td></tr>
+            <tr><td style="padding:6px 0;color:#90a4ae">Unit Cost</td><td>KES {{ '{:,.2f}'.format(item.unit_cost) }}</td></tr>
+            <tr><td style="padding:6px 0;color:#90a4ae">Supplier</td><td>{{ item.supplier_name or 'N/A' }}</td></tr>
+            <tr><td style="padding:6px 0;color:#90a4ae">Status</td>
+                <td><span class="badge {% if item.status == 'Active' %}badge-success{% elif item.status == 'Out of Stock' %}badge-warning{% else %}badge-secondary{% endif %}">{{ item.status }}</span></td>
+            </tr>
+        </table>
+        {% if item.description %}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f4f8">
+            <div style="font-size:0.8rem;color:#90a4ae;margin-bottom:6px">DESCRIPTION</div>
+            <p style="font-size:0.9rem">{{ item.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <div class="card">
+            <div class="card-title"><i class="fas fa-warehouse"></i> Stock Level</div>
+            <<div class="{% if item.current_stock <= item.reorder_level %}
+            text-danger{% elif item.current_stock <= item.reorder_level * 1.5 %}
+            text-warning{% else %}text-success{% endif %}" style="font-size:3rem;font-weight:700;">
+            {{ item.current_stock }}
+        </div>
+        <div class="text-muted">{{ item.unit_of_measure }} in stock</div>
+        <div style="margin-top:10px;font-size:0.85rem">
+            Reorder level: <strong>{{ item.reorder_level }}</strong>
+            {% if item.current_stock <= item.reorder_level %}
+            <span class="badge badge-danger" style="margin-left:8px">Reorder Now</span>
+            {% endif %}
+        </div>
+        <div style="margin-top:8px;font-size:0.85rem;color:#90a4ae">
+            Total value: <strong style="color:var(--text)">KES {{ '{:,.2f}'.format(item.current_stock * item.unit_cost) }}</strong>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-title"><i class="fas fa-history"></i> Recent Transactions</div>
+        {% if history %}
+        <table style="width:100%;font-size:0.85rem">
+            <thead><tr>
+                <th style="background:var(--primary);color:white;padding:8px">Date</th>
+                <th style="background:var(--primary);color:white;padding:8px">Type</th>
+                <th style="background:var(--primary);color:white;padding:8px">Qty</th>
+                <th style="background:var(--primary);color:white;padding:8px">By</th>
+            </tr></thead>
+            <tbody>
+                {% for t in history %}
+                <tr style="border-bottom:1px solid #f0f4f8">
+                    <td style="padding:8px">{{ t.transaction_date.strftime('%d %b %Y') }}</td>
+                    <td style="padding:8px">
+                        <span class="badge {% if t.transaction_type == 'Inflow' %}badge-success{% else %}badge-danger{% endif %}">
+                            {{ t.sub_type }}
+                        </span>
+                    </td>
+                    <td style="padding:8px">{{ t.quantity }}</td>
+                    <td style="padding:8px">{{ t.username }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No transactions yet.</p>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% endblock %}

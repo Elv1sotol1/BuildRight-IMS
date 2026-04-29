@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Categories</div>
+        <div class="page-subtitle">Manage inventory categories</div>
+    </div>
+    <a href="{{ url_for('inventory.list_items') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Items
+    </a>
+</div>
+<div class="grid-2">
+    <div class="card">
+        <div class="card-title"><i class="fas fa-plus-circle" style="color:var(--secondary)"></i> Add Category</div>
+        <form method="POST" action="{{ url_for('inventory.add_category') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label class="form-label">Name <span style="color:var(--danger)">*</span></label>
+                <input type="text" name="name" class="form-control" required placeholder="e.g. Electrical">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-control" placeholder="Optional">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Add Category</button>
+        </form>
+    </div>
+    <div class="card">
+        <div class="card-title"><i class="fas fa-list" style="color:var(--secondary)"></i> Existing Categories</div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Name</th><th>Items</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                {% for cat in categories %}
+                <tr>
+                    <td><strong>{{ cat.name }}</strong>{% if cat.description %}<br><small class="text-muted">{{ cat.description }}</small>{% endif %}</td>
+                    <td><span class="badge badge-info">{{ cat.item_count }}</span></td>
+                    <td>
+                        {% if cat.item_count == 0 %}
+                        <form method="POST" action="{{ url_for('inventory.delete_category', category_id=cat.category_id) }}"
+                            onsubmit="return confirm('Delete this category?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted" style="font-size:0.8rem">In use</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center text-muted" style="padding:20px">No categories.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
