@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">My Profile</div>
+    <div class="page-subtitle">View your account details and change your password</div>
+</div>
+<div class="grid-2">
+    <div class="card">
+        <div class="card-title"><i class="fas fa-user-circle" style="color:var(--secondary)"></i> Account Details</div>
+        <table style="width:100%;font-size:0.9rem">
+            <tr><td style="padding:8px 0;color:#90a4ae;width:40%">Username</td><td><strong>{{ user.username }}</strong></td></tr>
+            <tr><td style="padding:8px 0;color:#90a4ae">Full Name</td><td>{{ user.full_name }}</td></tr>
+            <tr><td style="padding:8px 0;color:#90a4ae">Email</td><td>{{ user.email }}</td></tr>
+            <tr><td style="padding:8px 0;color:#90a4ae">Role</td>
+                <td><span class="badge {% if user.role == 'Admin' %}badge-danger{% elif user.role == 'Manager' %}badge-info{% else %}badge-secondary{% endif %}">{{ user.role }}</span></td>
+            </tr>
+            <tr><td style="padding:8px 0;color:#90a4ae">Last Login</td>
+                <td class="text-muted">{% if user.last_login %}{{ user.last_login.strftime('%d %b %Y %H:%M') }}{% else %}N/A{% endif %}</td>
+            </tr>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-title"><i class="fas fa-lock" style="color:var(--warning)"></i> Change Password</div>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input type="password" name="current_password" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" name="new_password" id="newPw" class="form-control" required
+                    placeholder="Min. 8 characters" oninput="checkStrength(this.value)">
+                <div class="strength-bar" style="height:4px;border-radius:2px;background:#ecf0f1;margin-top:6px">
+                    <div id="strengthFill" style="height:100%;border-radius:2px;transition:all 0.3s;width:0"></div>
+                </div>
+                <small id="strengthLabel" class="text-muted"></small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" name="confirm_password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Password</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    function checkStrength(pw) {
+        const hasLen  = pw.length >= 8;
+        const hasNum  = /\d/.test(pw);
+        const hasSpec = /[!@#$%^&*(),.?":{}|<>]/.test(pw);
+        const score   = [hasLen, hasNum, hasSpec].filter(Boolean).length;
+        const fill    = document.getElementById('strengthFill');
+        const label   = document.getElementById('strengthLabel');
+        fill.style.width      = ['0%','33%','66%','100%'][score];
+        fill.style.background = ['#ecf0f1','#E74C3C','#F39C12','#27AE60'][score];
+        label.textContent     = ['','Weak','Moderate','Strong'][score];
+    }
+</script>
+{% endblock %}

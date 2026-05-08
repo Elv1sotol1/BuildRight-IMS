@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}New Purchase Order{% endblock %}
+{% block extra_css %}
+<style>
+    .item-row { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; align-items:end; margin-bottom:10px; }
+    .item-row-header { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; margin-bottom:6px; font-size:0.8rem; font-weight:600; color:#90a4ae; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">New Purchase Order</div>
+    <div class="page-subtitle">Create a purchase order for supplier stock</div>
+</div>
+<form method="POST" id="poForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card">
+        <div class="card-title">Order Details</div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Supplier <span style="color:var(--danger)">*</span></label>
+                <select name="supplier_id" class="form-control" required>
+                    <option value="">Select supplier</option>
+                    {% for s in suppliers %}
+                    <option value="{{ s.supplier_id }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Site / Location</label>
+                <select name="site_id" class="form-control">
+                    <option value="">No specific site</option>
+                    {% for site in sites %}
+                    <option value="{{ site.site_id }}">{{ site.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Expected Delivery Date</label>
+                <input type="date" name="expected_date" class="form-control">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">Items to Order</div>
+        <div class="item-row-header">
+            <span>Item</span><span>Quantity</span><span>Unit Cost (KES)</span><span></span>
+        </div>
+        <div id="itemsContainer">
+            <div class="item-row">
+                <select name="item_id[]" class="form-control" onchange="fillCost(this)">
+                    <option value="">Select item</option>
+                    {% for item in items %}
+                    <option value="{{ item.item_id }}" data-cost="{{ item.unit_cost }}" data-unit="{{ item.unit_of_measure }}">
+                        {{ item.name }} ({{ item.item_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <input type="number" name="quantity[]" class="form-control" min="1" placeholder="Qty" oninput="calcTotal()">
+                <input type="number" name="unit_cost[]" class="form-control" min="0" step="0.01" placeholder="Cost" oninput="calcTotal()">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addRow()" style="margin-top:8px">
+            <i class="fas fa-plus"></i> Add Item
+        </button>
+        <div id="totalDisplay" style="margin-top:16px;font-size:1rem;font-weight:600;color:var(--primary)">
+            Total: KES <span id="grandTotal">0.00</span>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit for Approval</button>
+        <a href="{{ url_for('po.list_pos') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+    const itemTemplate = document.querySelector('.item-row').outerHTML;
+ 
+    function addRow() {
+        const container = document.getElementById('itemsContainer');
+        const div = document.createElement('div');
+        div.innerHTML = itemTemplate;
+        container.appendChild(div.firstChild);
+    }
+ 
+    function removeRow(btn) {
+        const rows = document.querySelectorAll('.item-row');
+        if (rows.length > 1) btn.closest('.item-row').remove();
+        calcTotal();
+    }
+ 
+    function fillCost(sel) {
+        const opt  = sel.options[sel.selectedIndex];
+        const row  = sel.closest('.item-row');
+        const costInput = row.querySelector('input[name="unit_cost[]"]');
+        if (opt.dataset.cost) costInput.value = opt.dataset.cost;
+        calcTotal();
+    }
+ 
+    function calcTotal() {
+        let total = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const qty  = parseFloat(row.querySelector('input[name="quantity[]"]').value) || 0;
+            const cost = parseFloat(row.querySelector('input[name="unit_cost[]"]').value) || 0;
+            total += qty * cost;
+        });
+        document.getElementById('grandTotal').textContent = total.toLocaleString('en-KE', {minimumFractionDigits:2});
+    }
+</script>
+{% endblock %}

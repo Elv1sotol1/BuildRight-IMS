@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Purchase Orders{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Purchase Orders</div>
+        <div class="page-subtitle">{{ total }} order(s) total</div>
+    </div>
+    <a href="{{ url_for('po.create_po') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> New Purchase Order
+    </a>
+</div>
+<div class="card mb-2">
+    <form method="GET" class="d-flex gap-2" style="align-items:flex-end;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;flex:1;min-width:180px">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control" placeholder="PO number or supplier" value="{{ search }}">
+        </div>
+        <div class="form-group" style="margin:0;min-width:160px">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control">
+                <option value="">All Statuses</option>
+                {% for s in ['Draft','Pending Approval','Approved','Partially Received','Received','Cancelled'] %}
+                <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display:flex;gap:8px;padding-bottom:1px">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+            <a href="{{ url_for('po.list_pos') }}" class="btn btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>PO Number</th><th>Supplier</th><th>Site</th><th>Status</th><th>Total</th><th>Requested By</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+            {% for po in pos %}
+            <tr>
+                <td><a href="{{ url_for('po.view_po', po_id=po.po_id) }}" style="color:var(--secondary);font-weight:600;text-decoration:none">{{ po.po_number }}</a></td>
+                <td>{{ po.supplier_name }}</td>
+                <td>{{ po.site_name or '-' }}</td>
+                <td>
+                    <span class="badge
+                        {% if po.status == 'Approved' %}badge-success
+                        {% elif po.status == 'Pending Approval' %}badge-warning
+                        {% elif po.status == 'Received' %}badge-info
+                        {% elif po.status == 'Cancelled' %}badge-danger
+                        {% else %}badge-secondary{% endif %}">
+                        {{ po.status }}
+                    </span>
+                </td>
+                <td><strong>KES {{ '{:,.2f}'.format(po.total_amount) }}</strong></td>
+                <td class="text-muted">{{ po.requested_by_name }}</td>
+                <td class="text-muted">{{ po.created_at.strftime('%d %b %Y') }}</td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('po.view_po', po_id=po.po_id) }}" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i></a>
+                        {% if po.status == 'Pending Approval' and session.role in ['Admin','Manager'] %}
+                        <form method="POST" action="{{ url_for('po.approve_po', po_id=po.po_id) }}" style="display:inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Approve</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('po.reject_po', po_id=po.po_id) }}" style="display:inline"
+                            onsubmit="return confirm('Reject and cancel this PO?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+                        </form>
+                        {% elif po.status in ['Approved','Partially Received'] and session.role in ['Admin','Manager'] %}
+                        <a href="{{ url_for('po.receive_po', po_id=po.po_id) }}" class="btn btn-primary btn-sm"><i class="fas fa-truck"></i> Receive</a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted" style="padding:32px">No purchase orders yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}<a href="{{ url_for('po.list_pos', page=page-1, status=status, search=search) }}"><i class="fas fa-chevron-left"></i></a>{% endif %}
+        {% for p in range(1, total_pages+1) %}
+        <a href="{{ url_for('po.list_pos', page=p, status=status, search=search) }}" class="{% if p==page %}current{% endif %}">{{ p }}</a>
+        {% endfor %}
+        {% if page < total_pages %}<a href="{{ url_for('po.list_pos', page=page+1, status=status, search=search) }}"><i class="fas fa-chevron-right"></i></a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

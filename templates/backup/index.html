@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Backup & Recovery{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Backup & Recovery</div>
+        <div class="page-subtitle">Manage database backups. Auto-backup runs daily at 2:00 AM.</div>
+    </div>
+    <form method="POST" action="{{ url_for('backup.run') }}"  onsubmit="return confirm('Create a new backup now?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-database"></i> Run Backup Now
+        </button>
+    </form>
+</div>
+ 
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Type</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for b in backups %}
+            <tr>
+                <td>
+                    <i class="fas fa-file-alt" style="color:var(--secondary)"></i>
+                    <code style="font-size:0.8rem;margin-left:6px">{{ b.filename }}</code>
+                    {% if not b.file_exists %}
+                    <span class="badge badge-danger" style="margin-left:6px">File Missing</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if b.backup_type == 'Scheduled' %}badge-info{% else %}badge-secondary{% endif %}">
+                        {{ b.backup_type }}
+                    </span>
+                </td>
+                <td class="text-muted">
+                    {% if b.file_size_bytes %}
+                        {{ (b.file_size_bytes / 1024)|round(1) }} KB
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if b.status == 'Completed' %}badge-success{% else %}badge-danger{% endif %}">
+                        {{ b.status }}
+                    </span>
+                </td>
+                <td class="text-muted">{{ b.created_at.strftime('%d %b %Y %H:%M') }}</td>
+                <td class="text-muted">{{ b.username or 'Scheduler' }}</td>
+                <td>
+                    <div class="d-flex gap-2">
+                        {% if b.file_exists %}
+                        <a href="{{ url_for('backup.download', filename=b.filename) }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('backup.restore', backup_id=b.backup_id) }}"
+                            onsubmit="return confirm('Restore database from this backup? Current data will be overwritten.')"
+                            style="display:inline">
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('backup.delete', backup_id=b.backup_id) }}"
+                            onsubmit="return confirm('Delete this backup?')" style="display:inline">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center text-muted" style="padding:40px">
+                    <i class="fas fa-database" style="font-size:2rem;margin-bottom:10px;display:block"></i>
+                    No backups yet. Click Run Backup Now to create one.
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

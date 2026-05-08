@@ -1,0 +1,27 @@
+# Environments
+.env
+-ElvisXPS.env
+.venv/
+ven/
+venv/
+env/
+Scripts/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDEs
+.vscode/
+
+# Database / Sensitive
+config.py
+config-ElvisXPS.py
+backups/
+instance/
+
+# OS files
+.DS_Store
+Thumbs.db

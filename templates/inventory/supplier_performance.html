@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Supplier Performance{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+    <div>
+        <div class="page-title">Supplier Performance</div>
+        <div class="page-subtitle">Purchase order completion and value by supplier</div>
+    </div>
+    <a href="{{ url_for('inventory.list_suppliers') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Suppliers
+    </a>
+</div>
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Supplier</th><th>Contact</th><th>Total POs</th><th>Completed</th><th>Pending</th><th>Cancelled</th><th>Total Value (KES)</th><th>Items Linked</th><th>Completion Rate</th></tr>
+            </thead>
+            <tbody>
+            {% for s in suppliers %}
+            {% set rate = [((s.completed_pos / s.total_pos * 100) | round(1)), 100] | min if s.total_pos > 0 else 0 %}
+            {% set bar_width = [rate, 100] | min %}
+            <tr>
+                <td><strong>{{ s.name }}</strong></td>
+                <td class="text-muted">{{ s.contact_person or '-' }}</td>
+                <td>{{ s.total_pos }}</td>
+                <td><span class="badge badge-success">{{ s.completed_pos }}</span></td>
+                <td><span class="badge badge-warning">{{ s.pending_pos }}</span></td>
+                <td><span class="badge badge-danger">{{ s.cancelled_pos }}</span></td>
+                <td><strong>{{ '{:,.2f}'.format(s.total_value) }}</strong></td>
+                <td>{{ s.linked_items }}</td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <div style="flex:1;background:#ecf0f1;border-radius:4px;height:8px">
+                            <div style="width:{{ bar_width }}%;background:{% if rate >= 80 %}var(--success){% elif bar_width >= 50 %}var(--warning){% else %}var(--danger){% endif %};height:100%;border-radius:4px"></div>
+                        </div>
+                        <span style="font-size:0.8rem;font-weight:600">{{ rate }}%</span>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="text-center text-muted" style="padding:32px">No supplier data yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

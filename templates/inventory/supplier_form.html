@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Supplier{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">{{ action }} Supplier</div>
+    <div class="page-subtitle">{% if action == 'Add' %}Register a new supplier{% else %}Update supplier details{% endif %}</div>
+</div>
+<div class="card" style="max-width:540px">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label class="form-label">Supplier Name <span style="color:var(--danger)">*</span></label>
+            <input type="text" name="name" class="form-control" required
+                value="{% if supplier %}{{ supplier.name }}{% endif %}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input type="text" name="contact_person" class="form-control"
+                value="{% if supplier %}{{ supplier.contact_person or '' }}{% endif %}">
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="text" name="phone" class="form-control"
+                    value="{% if supplier %}{{ supplier.phone or '' }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control"
+                    value="{% if supplier %}{{ supplier.email or '' }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Address</label>
+            <textarea name="address" class="form-control" rows="2">{% if supplier %}{{ supplier.address or '' }}{% endif %}</textarea>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Supplier</button>
+            <a href="{{ url_for('inventory.list_suppliers') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

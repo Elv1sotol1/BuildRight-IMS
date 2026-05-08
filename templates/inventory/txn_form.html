@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}New Transaction{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">New Transaction</div>
+    <div class="page-subtitle">Record a stock inflow or outflow</div>
+</div>
+
+<div class="card" style="max-width:620px">
+    <form method="POST" id="txnForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label class="form-label">Item <span style="color:var(--danger)">*</span></label>
+            <select name="item_id" id="itemSelect" class="form-control" required onchange="loadItemInfo()">
+                <option value="">Select an item</option>
+                {% for item in items %}
+                <option value="{{ item.item_id }}" data-cost="{{ item.unit_cost }}"
+                    data-unit="{{ item.unit_of_measure }}" data-stock="{{ item.current_stock }}">
+                    {{ item.name }} ({{ item.item_id }}) — Stock: {{ item.current_stock }} {{ item.unit_of_measure }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div id="stockInfo" style="display:none;margin-bottom:16px;padding:12px;background:#f0f4f8;border-radius:8px;font-size:0.875rem">
+            Current stock: <strong id="currentStock"></strong>
+        </div>
+        
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Transaction Type <span style="color:var(--danger)">*</span></label>
+                <select name="transaction_type" id="txnType" class="form-control" required onchange="updateSubTypes()">
+                    <option value="">Select type</option>
+                    <option value="Inflow">Inflow (Stock In)</option>
+                    <option value="Outflow">Outflow (Stock Out)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sub-Type <span style="color:var(--danger)">*</span></label>
+                <select name="sub_type" id="subType" class="form-control" required>
+                    <option value="">Select sub-type</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Quantity <span style="color:var(--danger)">*</span></label>
+                <input type="number" name="quantity" id="qtyInput" class="form-control" min="1" required
+                oninput="calcTotal()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Unit Cost (KES)</label>
+                <input type="number" name="unit_cost" id="costInput" class="form-control" min="0" step="0.01"
+                oninput="calcTotal()">
+            </div>
+        </div>
+        
+        <div id="totalDisplay" style="display:none;margin-bottom:16px;padding:12px;background:#e8f4fd;border-radius:8px;font-size:0.9rem">
+            Total Value: <strong id="totalValue" style="color:var(--secondary)"></strong>
+        </div>
+        
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Transaction Date <span style="color:var(--danger)">*</span></label>
+                <input type="date" name="transaction_date" class="form-control" required
+                value="{{ today }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reference Number</label>
+                <input type="text" name="reference_number" class="form-control" placeholder="e.g. INV-001">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Record Transaction</button>
+            <a href="{{ url_for('inventory.transactions') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    const inflow  = ['Purchase','Return','Adjustment'];
+    const outflow = ['Sale','Loan','Damage','Theft','Write-off'];
+    
+    function updateSubTypes() {
+        const type = document.getElementById('txnType').value;
+        const sub  = document.getElementById('subType');
+        sub.innerHTML = '<option value="">Select sub-type</option>';
+        const opts = type === 'Inflow' ? inflow : type === 'Outflow' ? outflow : [];
+        opts.forEach(o => {
+            const el = document.createElement('option');
+            el.value = o; el.textContent = o;
+            sub.appendChild(el);
+        });
+    }
+ 
+    function loadItemInfo() {
+        const sel = document.getElementById('itemSelect');
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt.value) { document.getElementById('stockInfo').style.display='none'; return; }
+        const stock = opt.dataset.stock;
+        const unit  = opt.dataset.unit;
+        const cost  = opt.dataset.cost;
+        document.getElementById('currentStock').textContent = stock + ' ' + unit;
+        document.getElementById('stockInfo').style.display = 'block';
+        document.getElementById('costInput').value = cost;
+        calcTotal();
+    }
+    
+    function calcTotal() {
+        const qty  = parseFloat(document.getElementById('qtyInput').value) || 0;
+        const cost = parseFloat(document.getElementById('costInput').value) || 0;
+        const total = qty * cost;
+        if (qty > 0 && cost > 0) {
+            document.getElementById('totalDisplay').style.display = 'block';
+            document.getElementById('totalValue').textContent = 'KES ' + total.toLocaleString('en-KE', {minimumFractionDigits:2});
+        } else {
+            document.getElementById('totalDisplay').style.display = 'none';
+        }
+    }
+ 
+    document.getElementById('txnForm').addEventListener('submit', function(e) {
+        const type = document.getElementById('txnType').value;
+        const qty  = parseInt(document.getElementById('qtyInput').value) || 0;
+        const sel  = document.getElementById('itemSelect');
+        const stock = parseInt(sel.options[sel.selectedIndex].dataset.stock) || 0;
+        if (type === 'Outflow' && qty > stock) {
+            e.preventDefault();
+            alert('Quantity exceeds available stock (' + stock + ')');
+        }
+    });
+</script>
+{% endblock %}

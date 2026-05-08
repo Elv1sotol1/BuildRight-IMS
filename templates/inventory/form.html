@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Item{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">{{ action }} Inventory Item</div>
+    <div class="page-subtitle">{% if action == 'Add' %}Register a new item{% else %}Update item details{% endif %}</div>
+</div>
+
+<div class="card" style="max-width:700px">
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Item Name <span style="color:var(--danger)">*</span></label>
+                <input type="text" name="name" class="form-control" required
+                    value="{% if item %}{{ item.name }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category <span style="color:var(--danger)">*</span></label>
+                <select name="category_id" class="form-control" required>
+                    <option value="">Select category</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category_id }}"
+                        {% if item and item.category_id == cat.category_id %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+ 
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3">{% if item %}{{ item.description }}{% endif %}</textarea>
+        </div>
+ 
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Unit of Measure <span style="color:var(--danger)">*</span></label>
+                <input type="text" name="unit_of_measure" class="form-control" placeholder="e.g. pcs, kg, m"
+                    required value="{% if item %}{{ item.unit_of_measure }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Unit Cost (KES)</label>
+                <input type="number" name="unit_cost" class="form-control" min="0" step="0.01"
+                    value="{% if item %}{{ item.unit_cost }}{% else %}0{% endif %}">
+            </div>
+        </div>
+ 
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Current Stock</label>
+                <input type="number" name="current_stock" class="form-control" min="0"
+                    value="{% if item %}{{ item.current_stock }}{% else %}0{% endif %}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reorder Level</label>
+                <input type="number" name="reorder_level" class="form-control" min="0"
+                    value="{% if item %}{{ item.reorder_level }}{% else %}0{% endif %}">
+            </div>
+        </div>
+ 
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Supplier</label>
+                <select name="supplier_id" class="form-control">
+                    <option value="">No supplier</option>
+                    {% for sup in suppliers %}
+                    <option value="{{ sup.supplier_id }}"
+                        {% if item and item.supplier_id == sup.supplier_id %}selected{% endif %}>
+                        {{ sup.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control">
+                    <option value="Active" {% if not item or item.status == 'Active' %}selected{% endif %}>Active</option>
+                    <option value="Discontinued" {% if item and item.status == 'Discontinued' %}selected{% endif %}>Discontinued</option>
+                    <option value="Out of Stock" {% if item and item.status == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
+        </div>
+ 
+        <div class="form-group">
+            <label class="form-label">Item Image</label>
+            {% if item and item.image_path %}
+            <div style="margin-bottom:10px;display:flex;align-items:center;gap:12px">
+                <img src="{{ url_for('static', filename='img/uploads/' + item.image_path) }}"
+                    style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #dde3e8">
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+                    <input type="checkbox" name="remove_image"> Remove current image
+                </label>
+            </div>
+            {% endif %}
+            <input type="file" name="image" class="form-control" accept="image/*">
+            <small class="text-muted">PNG, JPG, WEBP up to 5MB</small>
+        </div>
+ 
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Item</button>
+            <a href="{{ url_for('inventory.list_items') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
