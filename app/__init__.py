@@ -22,6 +22,10 @@ except ImportError:
         MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
         SESSION_TIMEOUT_MINUTES = int(os.getenv('SESSION_TIMEOUT_MINUTES', 30))
         MAX_LOGIN_ATTEMPTS = int(os.getenv('MAX_LOGIN_ATTEMPTS', 5))
+        DB_HOST = os.getenv('MYSQL_HOST')
+        DB_USER = os.getenv('MYSQL_USER')
+        DB_PASSWORD = os.getenv('MYSQL_PASSWORD')
+        DB_NAME = os.getenv('MYSQL_DB')
 
 from .db import init_db
  
