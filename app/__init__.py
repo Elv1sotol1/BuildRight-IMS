@@ -1,7 +1,28 @@
 from flask import Flask, render_template
+# pyrefly: ignore [missing-import]
 from flask_wtf.csrf import CSRFProtect
+# pyrefly: ignore [missing-import]
 from flask_mail import Mail
-from config import Config
+import os
+
+try:
+    from config import Config
+except ImportError:
+    class Config:
+        SECRET_KEY = os.getenv('SECRET_KEY', 'default-key-if-missing')
+        MYSQL_HOST = os.getenv('MYSQL_HOST')
+        MYSQL_USER = os.getenv('MYSQL_USER')
+        MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
+        MYSQL_DB = os.getenv('MYSQL_DB')
+        MAIL_SERVER = os.getenv('MAIL_SERVER')
+        MAIL_PORT = os.getenv('MAIL_PORT')
+        MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'True') == 'True'
+        MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+        MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+        MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
+        SESSION_TIMEOUT_MINUTES = int(os.getenv('SESSION_TIMEOUT_MINUTES', 30))
+        MAX_LOGIN_ATTEMPTS = int(os.getenv('MAX_LOGIN_ATTEMPTS', 5))
+
 from .db import init_db
  
 csrf = CSRFProtect()
