@@ -6,6 +6,11 @@ connection_pool = None
 
 def init_db(app):
     global connection_pool
+
+    print("DB HOST:", app.config.get('DB_HOST'))
+    print("DB PORT:", app.config.get('DB_PORT'))
+    print("MYSQL PORT:", app.config.get('MYSQL_PORT'))
+
     connection_pool = pooling.MySQLConnectionPool(
         pool_name="buildright_pool",
         pool_size=10,
@@ -13,7 +18,9 @@ def init_db(app):
         user=app.config['DB_USER'],
         password=app.config['DB_PASSWORD'],
         database=app.config['DB_NAME'],
-        autocommit=False
+        port=int(app.config.get('DB_PORT', 16277)),
+        autocommit=False,
+        ssl_disabled=False
     )
 
     @app.teardown_appcontext
